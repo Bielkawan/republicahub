@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Boas práticas: Usar Enums para garantir integridade dos dados
+enum Role {
+  ADMIN   // Dono da Pensão
+  TENANT  // Morador
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE // Atrasado
+}
+
+// Tabela de Usuários (Pode ser o dono ou o morador)
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String   // ATENÇÃO: Teremos que usar bcrypt para hashear isso antes de salvar
+  role      Role     @default(TENANT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  properties Property[] // Propriedades que este usuário possui (se for ADMIN)
+  tenantInfo Tenant?    // Informações adicionais se este usuário for um morador
+}
+
+// Tabela da Pensão/República (Permite que o dono tenha mais de uma casa)
+model Property {
+  id          String   @id @default(uuid())
+  name        String   // Ex: "República USP 1"
+  address     String
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  rooms       Room[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Tabela de Quartos/Vagas
+model Room {
+  id          String     @id @default(uuid())
+  number      String     // Ex: "Quarto 12" ou "Vaga A"
+  capacity    Int        @default(1)
+  price       Decimal    // Mensalidade base daquela vaga
+  status      RoomStatus @default(AVAILABLE)
+  propertyId  String
+  property    Property   @relation(fields: [propertyId], references: [id])
+  tenants     Tenant[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+// Tabela do Morador (Liga o Usuário ao Quarto que ele alugou)
+model Tenant {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id])
+  roomId         String?
+  room           Room?     @relation(fields: [roomId], references: [id])
+  moveInDate     DateTime  // Data que entrou na república
+  moveOutDate    DateTime? // Data que saiu (mantém histórico)
+  emergencyPhone String?
+  payments       Payment[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// Tabela de Gestão Financeira (Onde a dor do dono da república é resolvida)
+model Payment {
+  id          String        @id @default(uuid())
+  amount      Decimal       // Valor cobrado
+  dueDate     DateTime      // Data de vencimento
+  paidDate    DateTime?     // Quando o morador pagou de fato
+  status      PaymentStatus @default(PENDING)
+  tenantId    String
+  tenant      Tenant        @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
