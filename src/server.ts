@@ -1,27 +1,31 @@
 import "dotenv/config";
 import express from "express";
-import { createUserSchema } from "./schemas/userSchema";
-import { prisma } from "./lib/prisma"; // Certifique-se de ter criado o arquivo src/lib/prisma.ts antes
+import cors from "cors";
+import { ZodError } from "zod";
+import { routes } from "./routes";
 
 const app = express();
+const PORT = Number(process.env.PORT ?? 3000);
+
+app.use(cors());
 app.use(express.json());
 
-app.post("/users", async (req, res) => {
-  try {
-    const userData = createUserSchema.parse(req.body);
-    
-    const user = await prisma.user.create({
-      data: {
-        name: userData.name,
-        email: userData.email,
-        password: userData.password,
-      },
-    });
+app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
+app.use("/api", routes);
 
-    return res.status(201).json({ message: "Usuário criado com sucesso!", user });
-  } catch (error: any) {
-    return res.status(400).json({ error: error.errors || error.message });
-  }
-});
+app.use(
+  (
+    err: unknown,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction,
+  ) => {
+    if (err instanceof ZodError) {
+      return res.status(400).json({ error: err.issues });
+    }
+    console.error(err);
+    return res.status(500).json({ error: "Erro interno do servidor" });
+  },
+);
 
-app.listen(3000, () => console.log("Servidor rodando na porta 3000"));
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));

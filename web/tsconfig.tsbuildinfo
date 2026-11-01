@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/components/Badge.tsx","./src/components/Layout.tsx","./src/lib/api.ts","./src/lib/format.ts","./src/lib/types.ts","./src/pages/DashboardPage.tsx","./src/pages/LoginPage.tsx","./src/pages/PaymentsPage.tsx","./src/pages/PropertiesPage.tsx","./src/pages/RoomsPage.tsx","./src/pages/TenantsPage.tsx"],"version":"5.9.3"}
