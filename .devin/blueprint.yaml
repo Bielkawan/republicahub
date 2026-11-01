@@ -1,0 +1,19 @@
+initialize: |
+  # Node 22 (apt's nodejs is v12, too old for Vite/Prisma 7)
+  curl -fsSL https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-x64.tar.xz | sudo tar -xJf - -C /usr/local --strip-components=1
+  # Postgres 16 in Docker for local dev (docker start is idempotent)
+  docker run -d --name republica-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=republicahub -p 5432:5432 postgres:16-alpine || docker start republica-pg
+  cp -n .env.example .env
+maintenance: |
+  npm install
+  (cd web && npm install)
+knowledge:
+  - name: backend
+    contents: |
+      # npm run dev (API em :3000/api); npx prisma migrate dev; npm run seed (dono@republica.com / republica123)
+  - name: frontend
+    contents: |
+      # cd web && npm run dev (app em :5173, proxy /api -> :3000); npm run build
+  - name: typecheck
+    contents: |
+      # npx tsc --noEmit (raiz) e (cd web && npx tsc -b)
